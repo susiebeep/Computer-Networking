@@ -19,6 +19,7 @@ class RDTLayer(object):
         self.dataToSend = ''
         self.dataIntoSeg = []
         self.seg = []
+        self.sendSize = 1
         self.currentIteration = 0 # <--- Use this for segment 'timeouts'
         self.countSegmentTimeouts = 0
 
@@ -38,9 +39,9 @@ class RDTLayer(object):
     def getDataReceived(self):
         myReceivedData = []
         for item in self.seg:
-            myReceivedData.append(str(item));     
-        myReceivedStr = ''.join(myReceivedData);
-        return myReceivedStr;
+            myReceivedData.append(str(item))     
+        myReceivedStr = ''.join(myReceivedData)
+        return myReceivedStr
 
     # "timeslice". Called by main once per iteration
     def manage(self):
@@ -63,47 +64,46 @@ class RDTLayer(object):
             received = self.receiveChannel.receive()
             for item in received:
                 print(item.acknum)
-        
-        # split the data into substrings of length 4 (DATA_LENGTH)
-        self.dataIntoSeg = [self.dataToSend[i:i+(self.DATA_LENGTH)] for i in range(0, len(self.dataToSend), self.DATA_LENGTH)]
-        
-        
-        # convert substrings into segments and set their data and sequence numbers  
-        seqNo = 1;
-        sendSize = 1;
-        
-         # send a burst of packets, ensuring not to send more than the receive window for the receiver (FLOW_CONTROL_WIN_SIZE)
-        #while (sendSize < self.FLOW_CONTROL_WIN_SIZE):
-        
-        for item in self.dataIntoSeg:
-            newseg = Segment()
-            newseg.setData(seqNo, item)
-            print("sending segment: ")
-            newseg.dump()
-                
-            # Use the unreliable sendChannel to send the segment
-            self.sendChannel.send(newseg)
-                
-            # start the timer for each segment (100 iterations)
-            # newseg.setStartIteration(100)
-              
-            # append segment to seg member variable
-            self.seg.append(item)
-            print ("seqNo", seqNo)
-            seqNo+=self.DATA_LENGTH
             
-            # add one to the send count
-            sendSize *= 4
-        
+            # split the data into substrings of length 4 (DATA_LENGTH)
+            self.dataIntoSeg = [self.dataToSend[i:i+(self.DATA_LENGTH)] for i in range(0, len(self.dataToSend), self.DATA_LENGTH)]
+            
+            
+            # convert substrings into segments and set their data and sequence numbers  
+            seqNo = 1;
+                
+            for item in self.dataIntoSeg:
+                newseg = Segment()
+                newseg.setData(seqNo, item)
+                 # append segment to seg member variable
+                self.seg.append(item)
+                seqNo+=self.DATA_LENGTH
           
-        # set last sequence number to be the sequence number of the last byte sent (should match 
-        # ack number sent by receiver)
-        # lastSeqNo = seqNo;
-           
-        # wait for acknum from receiver before sending next burst of segments    
-        # acknum received must equal lastSeqNo
-        
-        # countdown timer run out, re-send segment    
+                # start the timer for each segment (100 iterations)
+                # newseg.setStartIteration(100)
+                print("sending segment: ")
+                newseg.dump()
+                        
+                # Use the unreliable sendChannel to send the segment
+                self.sendChannel.send(newseg)
+                   
+                # increase the sendSize by 4
+                self.sendSize += 4
+                
+            # send a burst of packets, ensuring not to send more than the receive window for the receiver (FLOW_CONTROL_WIN_SIZE)
+            #while (self.sendSize < self.FLOW_CONTROL_WIN_SIZE):
+              #  for item1 in self.seg:
+                    
+            
+              
+            # set last sequence number to be the sequence number of the last byte sent (should match 
+            # ack number sent by receiver)
+            # lastSeqNo = seqNo;
+               
+            # wait for acknum from receiver before sending next burst of segments    
+            # acknum received must equal lastSeqNo
+            
+            # countdown timer run out, re-send segment    
 
 
     # Manage Segment receive  tasks...
