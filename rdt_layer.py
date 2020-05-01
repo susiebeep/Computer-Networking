@@ -117,8 +117,10 @@ class RDTLayer(object):
             incomingData = []
             for item in listIncoming:
                 acknum = item.seqnum + self.DATA_LENGTH
-                print("acknum:",  acknum)
                 incomingData.append(item.payload)
+                boolChecksum = item.checkChecksum()
+                if (boolChecksum == False):
+                    print("checksums don't match")
         
             #create the ack segment with a copy of the list of data received and an cumulative ack number
             ack = Segment()
@@ -135,4 +137,3 @@ class RDTLayer(object):
         # set cumulative ack number (sequence number of last byte plus it's length)       
         #ackFinal.setAck(acknum)
         
-          
