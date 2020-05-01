@@ -65,10 +65,10 @@ class RDTLayer(object):
         
         # convert substrings into segments and set their data and sequence numbers  
         seqNo = 1;
-        sendCount = 0;
+        sendSize = 1;
         
          # send a burst of packets, ensuring not to send more than the receive window for the receiver (FLOW_CONTROL_WIN_SIZE)
-        #while (sendCount < self.FLOW_CONTROL_WIN_SIZE):
+        #while (sendSize < self.FLOW_CONTROL_WIN_SIZE):
         
         for item in self.dataIntoSeg:
             newseg = Segment()
@@ -88,7 +88,7 @@ class RDTLayer(object):
             seqNo+=self.DATA_LENGTH
             
             # add one to the send count
-            sendCount+= 1
+            sendSize *= 4
         
           
         # set last sequence number to be the sequence number of the last byte sent (should match 
@@ -121,6 +121,8 @@ class RDTLayer(object):
                 boolChecksum = item.checkChecksum()
                 if (boolChecksum == False):
                     print("checksums don't match")
+                    #send back sequence number of corrupted segment for selective retransmission
+                    self.sendChannel.send(item.seqnum)
         
             #create the ack segment with a copy of the list of data received and an cumulative ack number
             ack = Segment()
@@ -133,7 +135,5 @@ class RDTLayer(object):
             self.sendChannel.send(ack)
             print("sending ack:")
             ack.dump() 
-  
-        # set cumulative ack number (sequence number of last byte plus it's length)       
-        #ackFinal.setAck(acknum)
+ 
         
