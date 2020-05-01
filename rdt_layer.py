@@ -59,6 +59,11 @@ class RDTLayer(object):
         # The data is just part of the entire string that you are trying to send.
         # The seqnum is the sequence number for the segment (in character number, not bytes)
         
+        if (len(self.dataToSend) != 0):
+            received = self.receiveChannel.receive()
+            for item in received:
+                print(item.acknum)
+        
         # split the data into substrings of length 4 (DATA_LENGTH)
         self.dataIntoSeg = [self.dataToSend[i:i+(self.DATA_LENGTH)] for i in range(0, len(self.dataToSend), self.DATA_LENGTH)]
         
