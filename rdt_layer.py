@@ -67,25 +67,29 @@ class RDTLayer(object):
         seqNo = 1;
         sendCount = 0;
         
+         # send a burst of packets, ensuring not to send more than the receive window for the receiver (FLOW_CONTROL_WIN_SIZE)
+        #while (sendCount < self.FLOW_CONTROL_WIN_SIZE):
+        
         for item in self.dataIntoSeg:
             newseg = Segment()
             newseg.setData(seqNo, item)
             print("sending segment: ")
             newseg.dump()
+                
             # Use the unreliable sendChannel to send the segment
             self.sendChannel.send(newseg)
+                
             # start the timer for each segment (100 iterations)
             # newseg.setStartIteration(100)
               
             # append segment to seg member variable
             self.seg.append(item)
+            print ("seqNo", seqNo)
             seqNo+=self.DATA_LENGTH
             
             # add one to the send count
             sendCount+= 1
         
-        # send a burst of packets, ensuring not to send more than the receive window for the receiver (FLOW_CONTROL_WIN_SIZE)
-        # while (sendCount < self.FLOW_CONTROL_WIN_SIZE):    
           
         # set last sequence number to be the sequence number of the last byte sent (should match 
         # ack number sent by receiver)
@@ -106,17 +110,29 @@ class RDTLayer(object):
         # Somewhere in here you will be creating ack segments to send.
         # The goal is to employ cumulative ack, just like TCP does...
         
-        # if incoming segment list is not empty, get sequence number of last byte plus it's length to set cumulative ack number
-        #if (len(listIncoming) == 0):
-        #    print("in manageReceive: no data received")
-        #else:
-        for item in listIncoming:
+        # get the ack number for the last segment sent and save a copy of the data received
+        # in a new list
+        if (len(listIncoming) != 0):
+            acknum = 0
+            incomingData = []
+            for item in listIncoming:
+                acknum = item.seqnum + self.DATA_LENGTH
+                print("acknum:",  acknum)
+                incomingData.append(item.payload)
+        
+            #create the ack segment with a copy of the list of data received and an cumulative ack number
             ack = Segment()
-            acknum = item.seqnum + self.DATA_LENGTH    
             ack.setAck(acknum)
-            self.seg.append(item.payload)
+        
+            for item in incomingData:
+                self.seg.append(item)          
         
             # Use the unreliable sendChannel to send the ack packet
             self.sendChannel.send(ack)
             print("sending ack:")
-            ack.dump()    
+            ack.dump() 
+  
+        # set cumulative ack number (sequence number of last byte plus it's length)       
+        #ackFinal.setAck(acknum)
+        
+          
