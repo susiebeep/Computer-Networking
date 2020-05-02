@@ -1,66 +1,20 @@
-
-# Sources used:
 import random
-from functools import reduce
 
-class Segment():
 
-    def __init__(self):
-        self.seqnum = -1
-        self.acknum = -1
-        self.payload = ''
-        self.checksum = 0
-        self.startIteration = 0
-        self.startDelayIteration = 0
+# #################################################################################################################### #
+# UnreliableChannel                                                                                                    #
+#                                                                                                                      #
+# Description:                                                                                                         #
+# This class is meant to be more of a blackbox but you are allowed to see the implementation. You are not allowed to   #
+# change anything in this file. There is also no need to base your algorithms on this particular implementation.       #
+#                                                                                                                      #
+#                                                                                                                      #
+# Notes:                                                                                                               #
+# This file is not to be changed.                                                                                      #
+#                                                                                                                      #
+#                                                                                                                      #
+# #################################################################################################################### #
 
-    def setData(self,seq,data):
-        self.seqnum = seq
-        self.acknum = -1
-        self.payload = data
-        self.checksum = 0
-        str = self.to_string()
-        self.checksum = self.calc_checksum(str)
-
-    def setAck(self,ack):
-        self.seqnum = -1
-        self.acknum = ack
-        self.payload = ''
-        self.checksum = 0
-        str = self.to_string()
-        self.checksum = self.calc_checksum(str)
-
-    def setStartIteration(self,iteration):
-        self.startIteration = iteration
-
-    def getStartIteration(self):
-        return self.startIteration
-
-    def setStartDelayIteration(self,iteration):
-        self.startDelayIteration = iteration
-
-    def getStartDelayIteration(self):
-        return self.startDelayIteration
-
-    def to_string(self):
-        return "seq: {0}, ack: {1}, data: {2}"\
-        .format(self.seqnum,self.acknum,self.payload)
-
-    def checkChecksum(self):
-        cs = self.calc_checksum(self.to_string())
-        return cs == self.checksum
-
-    def calc_checksum(self,str):
-        return reduce(lambda x,y:x+y, map(ord, str))
-
-    def dump(self):
-        print(self.to_string())
-
-    # Function to cause an error - Do not modify
-    def createChecksumError(self):
-        if not self.payload:
-            return
-        char = random.choice(self.payload)
-        self.payload = self.payload.replace(char, 'X', 1)
 
 class UnreliableChannel():
     RATIO_DROPPED_PACKETS = 0.1
@@ -96,7 +50,7 @@ class UnreliableChannel():
         #print("UnreliableChannel len receiveQueue: {0}".format(len(self.receiveQueue)))
         return new_list
 
-    def manage(self):
+    def processData(self):
         #print("UnreliableChannel manage - len sendQueue: {0}".format(len(self.sendQueue)))
         self.currentIteration += 1
 

@@ -1,14 +1,24 @@
-
-import time
-
 from rdt_layer import *
+from unreliable import UnreliableChannel
 
-################# Main ####################
-################# Main ####################
+# #################################################################################################################### #
+# Main                                                                                                                 #
+#                                                                                                                      #
+#                                                                                                                      #
+#                                                                                                                      #
+#                                                                                                                      #
+# #################################################################################################################### #
+
+# #################################################################################################################### #
+# The following are two sets of data input to the communication test. The first is small and the second is longer.     #
+# Start by uncomming the shorter until you feel you have a good algorithm. Then confirm it still works on a larger     #
+# scale by switching to the larger.                                                                                    #
+#                                                                                                                      #
+# #################################################################################################################### #
 
 dataToSend = "The quick brown fox jumped over the lazy dog"
 
-#dataToSend = "\r\n\r\n...We choose to go to the moon. We choose to go to the moon in this "\
+# dataToSend = "\r\n\r\n...We choose to go to the moon. We choose to go to the moon in this "\
 # "decade and do the other things, not because they are easy, but because they are hard, "\
 # "because that goal will serve to organize and measure the best of our energies and skills, "\
 # "because that challenge is one that we are willing to accept, one we are unwilling to "\
@@ -25,48 +35,58 @@ dataToSend = "The quick brown fox jumped over the lazy dog"
 # "right, and do it first before this decade is out.\r\n\r\n"\
 # "JFK - September 12, 1962\r\n"
 
+# #################################################################################################################### #
+
+# Create client and server
 client = RDTLayer()
 server = RDTLayer()
 
 # Start with a reliable channel (all flags false)
+# As you create your rdt algorithm for send and receive, turn these on.
 outOfOrder = False
 dropPackets = False
 delayPackets = False
 dataErrors = False
 
+# Create unreliable communication channels
 clientToServerChannel = UnreliableChannel(outOfOrder,dropPackets,delayPackets,dataErrors)
 serverToClientChannel = UnreliableChannel(outOfOrder,dropPackets,delayPackets,dataErrors)
 
+# Creat client and server that connect to unreliable channels
 client.setSendChannel(clientToServerChannel)
 client.setReceiveChannel(serverToClientChannel)
-
 server.setSendChannel(serverToClientChannel)
 server.setReceiveChannel(clientToServerChannel)
 
+# Set initial data that will be sent from client to server
 client.setDataToSend(dataToSend)
 
-loopIter = 1
+loopIter = 0            # Used to track communication timing in iterations
 while True:
-    print("loop: {0}".format(loopIter))
+    print("-----------------------------------------------------------------------------------------------------------")
+    loopIter += 1
+    print("Time (iterations) = {0}".format(loopIter))
 
-    # Call the manage methods to make stuff happen
-    client.manage()
-    clientToServerChannel.manage()
-    server.manage()
-    serverToClientChannel.manage()
+    # Sequence to pass segments back and forth between client and server
+    print("Client------------------------------------------")
+    client.processData()
+    clientToServerChannel.processData()
+    print("Server------------------------------------------")
+    server.processData()
+    serverToClientChannel.processData()
+
 
     # show the data received so far
-    dataReceived = server.getDataReceived()
-    print("dataReceived: {0}".format(dataReceived))
+    print("Main--------------------------------------------")
+    dataReceivedFromClient = server.getDataReceived()
+    print("DataReceivedFromClient: {0}".format(dataReceivedFromClient))
 
-    if dataReceived == dataToSend:
+    if dataReceivedFromClient == dataToSend:
         print('$$$$$$$$ ALL DATA RECEIVED $$$$$$$$')
         break
 
-    loopIter += 1
-
     #time.sleep(0.1)
-    input("Press any key to continue...")
+    input("Press enter to continue...")
 
 print("countTotalDataPackets: {0}".format(clientToServerChannel.countTotalDataPackets))
 print("countSentPackets: {0}".format(clientToServerChannel.countSentPackets + serverToClientChannel.countSentPackets))
@@ -76,6 +96,7 @@ print("countDelayedPackets: {0}".format(clientToServerChannel.countDelayedPacket
 print("countDroppedDataPackets: {0}".format(clientToServerChannel.countDroppedPackets))
 print("countAckPackets: {0}".format(serverToClientChannel.countAckPackets))
 print("countDroppedAckPackets: {0}".format(serverToClientChannel.countDroppedPackets))
+
 print("# segment timeouts: {0}".format(client.countSegmentTimeouts))
 
 print("TOTAL ITERATIONS: {0}".format(loopIter))
